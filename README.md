@@ -2,4 +2,16 @@
 
 マンデルブロ集合
 
-<math display="block" class="tml-display" style="display:block math;"><mrow><msub><mi>z</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msubsup><mi>z</mi><mi>n</mi><mn class="tml-sml-pad">2</mn></msubsup><mo>+</mo><mi>c</mi></mrow></math>
+z0=0
+
+zn+1=zn^2+c
+
+そして
+
+f(z,n)=zn
+
+としてf(z,n)を定義する。
+
+lim n->∞ f(rand#+irand#,n)
+
+が発散するとき数列{zn}を複素数平面上にプロットして得られる図形である。
