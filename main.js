@@ -5,11 +5,16 @@ WebAssembly.instantiateStreaming(fetch("mandelbrot.wasm"),{}).then((obj)=>{
     exports=obj.instance.exports;
     draw();
 });
+let r=screen.height/2;
 function generatePoints(){
+    canvas.width=r;
+    canvas.height=r;
     inst=[];
-    for(let k=0; k<1200000; ++k){
-        const len=exports.mandelbrot(Math.random()*2-1,Math.random()*2-1,N);
+    for(let x=0; x<r; ++x){
+    for(let y=0; y<r; ++y){
+        const len=exports.mandelbrot(x/r*2-1,y/r*2-1,N);
         inst.push(...new Float32Array(exports.mem.buffer,0,len));
+    }
     }
 }
 async function draw(){

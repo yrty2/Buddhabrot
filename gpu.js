@@ -2,8 +2,6 @@ const size=0.001;
 let inst=new Array();
 let camera=new Float32Array([-0.25,0]);
 const canvas=document.querySelector(".canvas");
-canvas.width=screen.width;
-canvas.height=screen.width;
 var g_device,g_adapter,presentationFormat,context,WGSL;
 var gpuinitialized=false;
 async function init(){
@@ -48,7 +46,7 @@ fn hsl2rgb(h:f32,s:f32,l:f32)->vec3<f32>{
 fn main(@location(0) position: vec3<f32>) -> VertexOutput {
   var output : VertexOutput;
   output.Position=vec4<f32>(position.yz,0,1);
-  output.fragColor=vec4<f32>(hsl2rgb(position.x*20,1,0.1),0.9);
+  output.fragColor=vec4<f32>(hsl2rgb(position.x+150,1,0.05),0.999);
   return output;
 }
 @fragment
