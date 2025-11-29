@@ -4,7 +4,7 @@ const keys={
 }
 function control(){
     var controling=false;
-    if(keys.space){
+    /*if(keys.space){
         zoom*=1.1;
         controling=true;
     }
@@ -14,11 +14,11 @@ function control(){
     }
     if(controling){
         draw();
-    }
+    }*/
     requestAnimationFrame(control);
 }
 control();
-window.addEventListener("keydown",e=>{
+/*window.addEventListener("keydown",e=>{
     e.preventDefault();
     if(e.code=="Space"){
         keys.space=true;
@@ -34,4 +34,4 @@ window.addEventListener("keyup",e=>{
     if(e.code=="ShiftLeft"){
         keys.shift=false;
     }
-});
+});*/

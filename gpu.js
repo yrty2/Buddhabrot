@@ -21,10 +21,6 @@ context.configure({
   alphaMode: 'premultiplied'
 });
 WGSL=`
-struct Uniforms {
-  camera : vec4<f32>
-}
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
   @location(0) fragColor : vec4<f32>
@@ -49,10 +45,10 @@ fn hsl2rgb(h:f32,s:f32,l:f32)->vec3<f32>{
         }
 }
 @vertex
-fn main(@location(0) position: vec2<f32>,@location(1) iter: f32,@location(2) pos: vec2<f32>) -> VertexOutput {
+fn main(@location(0) position: vec3<f32>) -> VertexOutput {
   var output : VertexOutput;
-  output.Position=vec4<f32>(pos.x+position.x,(pos.y+position.y)*uniforms.camera.z,0,1);
-  output.fragColor=vec4<f32>(hsl2rgb(iter*720+20,1,0.1),0.9);
+  output.Position=vec4<f32>(position.yz,0,1);
+  output.fragColor=vec4<f32>(hsl2rgb(position.x*20,1,0.1),0.9);
   return output;
 }
 @fragment
@@ -65,50 +61,12 @@ function render(){
 //頂点配列
 // 頂点データを作成.
 const verticesBuffer = g_device.createBuffer({
-  size: 4*8,
+  size: 4*inst.length,
   usage: GPUBufferUsage.VERTEX,
   mappedAtCreation: true,
 });
-    const s=size/2;
-new Float32Array(verticesBuffer.getMappedRange()).set(new Float32Array([
-    -s,-s,
-    s,-s,
-    -s,s,
-    s,s
-]));
+new Float32Array(verticesBuffer.getMappedRange()).set(new Float32Array(inst));
 verticesBuffer.unmap();
-
-//インデックス配列
-const quadIndexArray = new Uint16Array([0,1,2,2,1,3]);
-const indicesBuffer = g_device.createBuffer({
-  size: quadIndexArray.byteLength,
-  usage: GPUBufferUsage.INDEX,
-  mappedAtCreation: true,
-});
-//マップしたバッファデータをセット
-new Uint16Array(indicesBuffer.getMappedRange()).set(quadIndexArray);
-indicesBuffer.unmap();
-
-//Uniformバッファ
-const uniformBufferSize = 4*(4);
-  const uniformBuffer = g_device.createBuffer({
-    size: uniformBufferSize,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-});
-var bufferPosition=0;
-function bind(a){
-const p=new Float32Array(a);
-g_device.queue.writeBuffer(
-  uniformBuffer,
-  bufferPosition,
-  p.buffer,
-  p.byteOffset,
-  p.byteLength
-);
-bufferPosition+=p.byteLength;
-}
-bind(camera);
-bind([canvas.width/canvas.height,0]);
 
 //レンダーパイプラインの設定
 const pipeline = g_device.createRenderPipeline({
@@ -120,31 +78,15 @@ const pipeline = g_device.createRenderPipeline({
     entryPoint: 'main',
     buffers: [
       {
-        arrayStride: 4*2,
+        arrayStride: 4*3,
         attributes: [
           {
             shaderLocation: 0,
             offset: 0,
-            format: 'float32x2',
+            format: 'float32x3',
           }
         ],
-      },
-        {//インスタンス
-       	  arrayStride: 4*(1+2),
-          stepMode: 'instance',
-          attributes: [
-            {
-			  shaderLocation: 1,
-              offset: 0,
-              format: 'float32'
-            },
-            {
-            shaderLocation: 2,
-            offset: 4*(1),
-            format: 'float32x2',
-            }
-          ]
-        }
+      }
     ],
   },
   fragment: {
@@ -172,31 +114,8 @@ const pipeline = g_device.createRenderPipeline({
     ]
   },
   primitive: {
-    topology: 'triangle-list',
+    topology: 'point-list',
   }
-});
-
-//インスタンスバッファを作成
-const instancePositions=new Float32Array(inst);
-  const instancesBuffer = g_device.createBuffer({
-    size: instancePositions.byteLength,
-    usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true
-  });
-  new Float32Array(instancesBuffer.getMappedRange()).set(instancePositions);
-  instancesBuffer.unmap();
-
-//バインドグループを作成
-const bindGroup = g_device.createBindGroup({
-  layout: pipeline.getBindGroupLayout(0),
-  entries: [
-    {
-      binding: 0,
-      resource: {
-        buffer: uniformBuffer,
-      }
-    }
-  ]
 });
 //コマンドバッファの作成
 const commandEncoder = g_device.createCommandEncoder();
@@ -215,11 +134,8 @@ const textureView = context.getCurrentTexture().createView();
   //エンコーダー
   const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
   passEncoder.setPipeline(pipeline);
-  passEncoder.setBindGroup(0, bindGroup);
   passEncoder.setVertexBuffer(0, verticesBuffer);
-  passEncoder.setIndexBuffer(indicesBuffer, 'uint16');
-  passEncoder.setVertexBuffer(1, instancesBuffer);
-  passEncoder.drawIndexed(quadIndexArray.length,Math.floor(instancePositions.length/(1+2)));
+  passEncoder.draw(inst.length/3);
   passEncoder.end();
   g_device.queue.submit([commandEncoder.finish()]);
 }
